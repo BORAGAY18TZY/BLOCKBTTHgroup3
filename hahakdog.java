@@ -3,6 +3,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class hahakdog extends JFrame {
 
@@ -15,10 +19,16 @@ public class hahakdog extends JFrame {
     private JTextField companyField, modelField, yearField, mileageField;
     private JTextArea outputArea;
     private JButton processButton, clearButton;
+    
+    // FEATURE 1: Add export button
+    private JButton exportButton;
+    
+    // FEATURE 2: Add status label
+    private JLabel statusLabel;
 
     public hahakdog() {
         setTitle("Car Information System");
-        setSize(450, 450);
+        setSize(450, 500);  // Increased height for new components
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new FlowLayout());
 
@@ -32,30 +42,47 @@ public class hahakdog extends JFrame {
         add(modelField);
 
         add(new JLabel("Year:"));
-        yearField = new JTextField(20);
+        yearField = new JTextField(10);
         add(yearField);
 
-        add(new JLabel("Mileage (km):"));
-        mileageField = new JTextField(20);
+        add(new JLabel("Mileage:"));
+        mileageField = new JTextField(10);
         add(mileageField);
 
-        // Buttons
-        processButton = new JButton("Process and Display");
-        add(processButton);
-
-        clearButton = new JButton("Clear");
-        add(clearButton);
-
         // Output area
-        outputArea = new JTextArea(12, 30);
+        outputArea = new JTextArea(10, 35);
         outputArea.setEditable(false);
-        add(new JScrollPane(outputArea));
+        JScrollPane scrollPane = new JScrollPane(outputArea);
+        add(scrollPane);
 
-        // Button actions
+        // FEATURE 2: Add status label
+        statusLabel = new JLabel("Ready");
+        statusLabel.setForeground(Color.BLUE);
+        add(statusLabel);
+
+        // Buttons panel
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout());
+
+        processButton = new JButton("Process Data");
+        clearButton = new JButton("Clear");
+        
+        // FEATURE 1: Add export button
+        exportButton = new JButton("Export to File");
+
+        buttonPanel.add(processButton);
+        buttonPanel.add(clearButton);
+        buttonPanel.add(exportButton);  // Add export button
+        
+        add(buttonPanel);
+
+        // Action Listeners
         processButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                processCarInfo();
+                processData();
+                statusLabel.setText("Data processed successfully");
+                statusLabel.setForeground(Color.GREEN);
             }
         });
 
@@ -63,31 +90,58 @@ public class hahakdog extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 clearFields();
+                statusLabel.setText("Fields cleared");
+                statusLabel.setForeground(Color.BLUE);
+            }
+        });
+
+        // FEATURE 1: Export button action listener
+        exportButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                exportToFile();
             }
         });
     }
 
-    // Process input and display results
-    private void processCarInfo() {
+    private void processData() {
         try {
             company_Name = companyField.getText();
             model_Name = modelField.getText();
             year = Integer.parseInt(yearField.getText());
             mileAge = Double.parseDouble(mileageField.getText());
 
-            outputArea.setText(
-                    "--- USER INPUT RESULTS ---\n" +
-                    getCarInfo() +
-                    "Mileage Category: " + getMileageCategory() + "\n" +
-                    "Car Age: " + getCarAge() + " years\n" +
-                    "Estimated Resale Value: ₱" + String.format("%,.2f", estimateResaleValue())
-            );
+            outputArea.setText("");
+            outputArea.append("Company: " + company_Name + "\n");
+            outputArea.append("Model: " + model_Name + "\n");
+            outputArea.append("Year: " + year + "\n");
+            outputArea.append("Mileage: " + mileAge + " km\n");
+            
+            // Add car age calculation
+            int currentYear = LocalDateTime.now().getYear();
+            int carAge = currentYear - year;
+            outputArea.append("Car Age: " + carAge + " years\n");
+            
+            // Add condition assessment based on mileage
+            String condition;
+            if (mileAge < 10000) {
+                condition = "Excellent";
+            } else if (mileAge < 50000) {
+                condition = "Good";
+            } else if (mileAge < 100000) {
+                condition = "Fair";
+            } else {
+                condition = "High Mileage";
+            }
+            outputArea.append("Condition: " + condition + "\n");
+
         } catch (NumberFormatException ex) {
             outputArea.setText("Error: Please enter valid numbers for year and mileage.");
+            statusLabel.setText("Error in input");
+            statusLabel.setForeground(Color.RED);
         }
     }
 
-    // Clear all input/output fields
     private void clearFields() {
         companyField.setText("");
         modelField.setText("");
@@ -96,38 +150,53 @@ public class hahakdog extends JFrame {
         outputArea.setText("");
     }
 
-    // Car information
-    private String getCarInfo() {
-        return "Car Information:\n" +
-                "Company: " + company_Name +
-                "\nModel: " + model_Name +
-                "\nYear: " + year +
-                "\nMileage: " + mileAge + " km\n";
-    }
+    // FEATURE 1: Export functionality
+    private void exportToFile() {
+        if (outputArea.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "No data to export. Please process data first.", 
+                "Export Error", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-    // FEATURE 3: Mileage category
-    private String getMileageCategory() {
-        if (mileAge < 20000) return "Low Mileage (Excellent condition)";
-        else if (mileAge < 70000) return "Average Usage";
-        else return "High Mileage (Heavily Used)";
-    }
-
-    // FEATURE 4: Car age
-    private int getCarAge() {
-        int currentYear = 2025;
-        return currentYear - year;
-    }
-
-    // FEATURE 1: Estimated resale value based on car age
-    private double estimateResaleValue() {
-        double baseValue = 500_000;
-        double age = getCarAge();
-        double depreciation = age * 0.05;
-        if (depreciation > 0.8) depreciation = 0.8; // max 80% depreciation
-        return baseValue * (1 - depreciation);
+        try {
+            String timestamp = LocalDateTime.now().format(
+                DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String filename = "car_export_" + timestamp + ".txt";
+            
+            FileWriter writer = new FileWriter(filename);
+            writer.write("=== Car Information Export ===\n");
+            writer.write("Export Time: " + 
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "\n");
+            writer.write("=============================\n\n");
+            writer.write(outputArea.getText());
+            writer.close();
+            
+            JOptionPane.showMessageDialog(this, 
+                "Data exported successfully to:\n" + filename, 
+                "Export Successful", 
+                JOptionPane.INFORMATION_MESSAGE);
+            statusLabel.setText("Exported to " + filename);
+            statusLabel.setForeground(new Color(0, 100, 0)); // Dark green
+            
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Error exporting file: " + ex.getMessage(), 
+                "Export Error", 
+                JOptionPane.ERROR_MESSAGE);
+            statusLabel.setText("Export failed");
+            statusLabel.setForeground(Color.RED);
+        }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new hahakdog().setVisible(true));
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                hahakdog app = new hahakdog();
+                app.setVisible(true);
+            }
+        });
     }
 }
