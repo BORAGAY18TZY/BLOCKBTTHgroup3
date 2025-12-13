@@ -1,0 +1,481 @@
+import java.util.Scanner;
+
+class Car {
+    private String company_name;
+    private String model_name;
+    private int year;
+    private double mileage;
+    private String fuelType;
+    private boolean isServiced;
+    
+    // Constructor
+    public Car(String company, String model, int year, double mileage, String fuelType) {
+        this.company_name = company;
+        this.model_name = model;
+        this.year = year;
+        this.mileage = mileage;
+        this.fuelType = fuelType;
+        this.isServiced = true;
+    }
+    
+    // Getter and setter for company_name
+    public String getCompanyName() {
+        return company_name;
+    }
+    
+    public void setCompanyName(String company) {
+        if (company != null && !company.trim().isEmpty()) {
+            this.company_name = company;
+        }
+    }
+    
+    // Getter and setter for model_name
+    public String getModelName() {
+        return model_name;
+    }
+    
+    public void setModelName(String model) {
+        if (model != null && !model.trim().isEmpty()) {
+            this.model_name = model;
+        }
+    }
+    
+    // Getter and setter for year
+    public int getYear() {
+        return year;
+    }
+    
+    public void setYear(int year) {
+        if (year >= 1886 && year <= 2024) {
+            this.year = year;
+        }
+    }
+    
+    // Getter only for mileage
+    public double getMileage() {
+        return mileage;
+    }
+    
+    // Package-private setter for mileage (used only by internal methods)
+    void setMileage(double mileage) {
+        if (mileage >= 0) {
+            this.mileage = mileage;
+        }
+    }
+    
+    // Additional feature 1: Calculate fuel efficiency rating
+    public String getFuelEfficiency() {
+        double kmPerLiter = 0;
+        String rating = "";
+        
+        if (fuelType.equalsIgnoreCase("Diesel")) {
+            kmPerLiter = mileage / 100;
+            rating = (kmPerLiter > 15) ? "Excellent" : (kmPerLiter > 10) ? "Good" : "Poor";
+        } else if (fuelType.equalsIgnoreCase("Gasoline")) {
+            kmPerLiter = mileage / 100;
+            rating = (kmPerLiter > 12) ? "Excellent" : (kmPerLiter > 8) ? "Good" : "Poor";
+        } else if (fuelType.equalsIgnoreCase("Electric")) {
+            double kmPerKwh = mileage / 100;
+            rating = (kmPerKwh > 20) ? "Excellent" : (kmPerKwh > 15) ? "Good" : "Poor";
+            return String.format("Energy Efficiency: %.1f km/kWh - %s", kmPerKwh, rating);
+        } else if (fuelType.equalsIgnoreCase("Hybrid")) {
+            kmPerLiter = mileage / 100;
+            rating = (kmPerLiter > 18) ? "Excellent" : (kmPerLiter > 12) ? "Good" : "Poor";
+        }
+        
+        return String.format("Fuel Efficiency: %.1f km/L - %s", kmPerLiter, rating);
+    }
+    
+    // Additional feature 2: Service reminder system
+    public void addTrip(double kilometers) {
+        if (kilometers > 0) {
+            double oldMileage = mileage;
+            mileage += kilometers;
+            System.out.printf("✓ Added %.1f km. Total: %.1f km\n", kilometers, mileage);
+            
+            // Check if service is needed (every 5000 km)
+            if ((int)(oldMileage / 5000) != (int)(mileage / 5000) && mileage >= 5000) {
+                isServiced = false;
+                System.out.println("⚠️  SERVICE REQUIRED! Car has reached " + mileage + " km");
+            }
+        }
+    }
+    
+    public void performService() {
+        if (!isServiced) {
+            isServiced = true;
+            System.out.println("✓ Car serviced successfully!");
+            System.out.println("  Next service due at " + (Math.ceil(mileage / 5000) * 5000) + " km");
+        } else {
+            System.out.println("Car is already up-to-date with service.");
+        }
+    }
+    
+    public boolean needsService() {
+        return !isServiced;
+    }
+    
+    public String getServiceStatus() {
+        return isServiced ? "Up to date" : "NEEDS SERVICE!";
+    }
+    
+    // Additional methods
+    public String getFuelType() {
+        return fuelType;
+    }
+    
+    public void setFuelType(String fuelType) {
+        this.fuelType = fuelType;
+    }
+    
+    // Display car information
+    public void displayCarInfo() {
+        
+        System.out.println("            CAR INFORMATION");
+        
+        System.out.println("Name:        " + company_name);
+        System.out.println("Model:          " + model_name);
+        System.out.println("Year:           " + year);
+        System.out.println("Mileage:        " + String.format("%.1f km", mileage));
+        System.out.println("Fuel Type:      " + fuelType);
+        System.out.println("Service Status: " + getServiceStatus());
+        System.out.println("Car Age:        " + calculateCarAge() + " years");
+        System.out.println(getFuelEfficiency());
+        
+    }
+    
+    // Calculate car age
+    public int calculateCarAge() {
+        return 2024 - year;
+    }
+    
+    // Calculate current value based on depreciation
+    public String estimateCurrentValue(double originalPrice) {
+        int age = calculateCarAge();
+        double depreciationRate = 0.15; // 15% per year
+        double currentValue = originalPrice * Math.pow(1 - depreciationRate, age);
+        
+        // Minimum value
+        currentValue = Math.max(currentValue, originalPrice * 0.1);
+        
+        return String.format("Estimated Current Value: ₱%,.2f (Original: ₱%,.2f)", 
+                           currentValue, originalPrice);
+    }
+}
+
+// Main class with manual input
+public class CarManagementSystem {
+    private static Scanner scanner = new Scanner(System.in);
+    
+    public static void main(String[] args) {
+        
+        // Ask user how many cars to register
+        System.out.print("How many cars would you like to register? ");
+        int numCars = getPositiveInt();
+        
+        Car[] cars = new Car[numCars];
+        
+        // Manual input for each car
+        for (int i = 0; i < numCars; i++) {
+            
+            System.out.println("     REGISTERING CAR #" + (i + 1));
+            
+            
+            cars[i] = createCarManually();
+        }
+        
+        boolean running = true;
+        while (running) {
+            
+            System.out.println("           MAIN MENU");
+            
+            System.out.println("1. View All Cars");
+            System.out.println("2. Update Car Information");
+            System.out.println("3. Add Trip/Kilometers");
+            System.out.println("4. Check/Perform Service");
+            System.out.println("5. Check Fuel Efficiency");
+            System.out.println("6. Estimate Car Value");
+            System.out.println("7. Exit");
+            System.out.print("\nEnter your choice (1-7): ");
+            
+            int choice = getIntInRange(1, 7);
+            
+            switch (choice) {
+                case 1:
+                    viewAllCars(cars);
+                    break;
+                case 2:
+                    updateCar(cars);
+                    break;
+                case 3:
+                    addTripToCar(cars);
+                    break;
+                case 4:
+                    serviceManagement(cars);
+                    break;
+                case 5:
+                    checkFuelEfficiency(cars);
+                    break;
+                case 6:
+                    estimateCarValues(cars);
+                    break;
+                case 7:
+                    running = false;
+                    System.out.println("\nThank you for using Car Management System!");
+                    break;
+            }
+        }
+        
+        scanner.close();
+    }
+    
+    // Method to create car manually
+    private static Car createCarManually() {
+        System.out.print("Enter Your Name: ");
+        String company = scanner.nextLine();
+        
+        System.out.print("Enter Model Name: ");
+        String model = scanner.nextLine();
+        
+        System.out.print("Enter Manufacturing Year (1886-2024): ");
+        int year = getIntInRange(1886, 2024);
+        
+        System.out.print("Enter Current Mileage (km): ");
+        double mileage = getPositiveDouble();
+        
+        System.out.println("\nAvailable Fuel Types:");
+        System.out.println("1. Gasoline");
+        System.out.println("2. Diesel");
+        System.out.println("3. Electric");
+        System.out.println("4. Hybrid");
+        System.out.print("Select fuel type (1-4): ");
+        
+        int fuelChoice = getIntInRange(1, 4);
+        String fuelType = "";
+        
+        switch (fuelChoice) {
+            case 1: fuelType = "Gasoline"; break;
+            case 2: fuelType = "Diesel"; break;
+            case 3: fuelType = "Electric"; break;
+            case 4: fuelType = "Hybrid"; break;
+        }
+        
+        System.out.println("✓ Car registered successfully!");
+        return new Car(company, model, year, mileage, fuelType);
+    }
+    
+    // Method to view all cars
+    private static void viewAllCars(Car[] cars) {
+        if (cars.length == 0) {
+            System.out.println("\nNo cars registered yet.");
+            return;
+        }
+        
+        
+        System.out.println("          ALL CARS LIST");
+        
+        
+        for (int i = 0; i < cars.length; i++) {
+            System.out.println("\nCar #" + (i + 1) + ":");
+            cars[i].displayCarInfo();
+        }
+    }
+    
+    // Method to update car information
+    private static void updateCar(Car[] cars) {
+        if (cars.length == 0) {
+            System.out.println("\nNo cars to update.");
+            return;
+        }
+        
+        System.out.print("\nEnter car number to update (1-" + cars.length + "): ");
+        int carIndex = getIntInRange(1, cars.length) - 1;
+        
+        System.out.println("\nWhat would you like to update?");
+        System.out.println("1. Your Name");
+        System.out.println("2. Model Name");
+        System.out.println("3. Manufacturing Year");
+        System.out.println("4. Fuel Type");
+        System.out.print("Enter choice (1-4): ");
+        
+        int choice = getIntInRange(1, 4);
+        
+        switch (choice) {
+            case 1:
+                System.out.print("Enter new company name: ");
+                String newCompany = scanner.nextLine();
+                cars[carIndex].setCompanyName(newCompany);
+                System.out.println("✓ Company name updated!");
+                break;
+            case 2:
+                System.out.print("Enter new model name: ");
+                String newModel = scanner.nextLine();
+                cars[carIndex].setModelName(newModel);
+                System.out.println("✓ Model name updated!");
+                break;
+            case 3:
+                System.out.print("Enter new manufacturing year: ");
+                int newYear = getIntInRange(1886, 2024);
+                cars[carIndex].setYear(newYear);
+                System.out.println("✓ Year updated!");
+                break;
+            case 4:
+                System.out.println("\nAvailable Fuel Types:");
+                System.out.println("1. Gasoline");
+                System.out.println("2. Diesel");
+                System.out.println("3. Electric");
+                System.out.println("4. Hybrid");
+                System.out.print("Select new fuel type (1-4): ");
+                int fuelChoice = getIntInRange(1, 4);
+                
+                String newFuelType = "";
+                switch (fuelChoice) {
+                    case 1: newFuelType = "Gasoline"; break;
+                    case 2: newFuelType = "Diesel"; break;
+                    case 3: newFuelType = "Electric"; break;
+                    case 4: newFuelType = "Hybrid"; break;
+                }
+                
+                cars[carIndex].setFuelType(newFuelType);
+                System.out.println("✓ Fuel type updated!");
+                break;
+        }
+    }
+    
+    // Method to add trip to car
+    private static void addTripToCar(Car[] cars) {
+        if (cars.length == 0) {
+            System.out.println("\nNo cars available.");
+            return;
+        }
+        
+        System.out.print("\nEnter car number to add trip (1-" + cars.length + "): ");
+        int carIndex = getIntInRange(1, cars.length) - 1;
+        
+        System.out.print("Enter kilometers traveled: ");
+        double kilometers = getPositiveDouble();
+        
+        System.out.println("\nAdding trip to " + cars[carIndex].getCompanyName() + 
+                          " " + cars[carIndex].getModelName() + "...");
+        cars[carIndex].addTrip(kilometers);
+    }
+    
+    // Method for service management
+    private static void serviceManagement(Car[] cars) {
+        if (cars.length == 0) {
+            System.out.println("\nNo cars available.");
+            return;
+        }
+        
+        
+        System.out.println("         SERVICE MANAGEMENT");
+        
+        
+        boolean anyNeedsService = false;
+        
+        for (int i = 0; i < cars.length; i++) {
+            if (cars[i].needsService()) {
+                anyNeedsService = true;
+                System.out.println("\nCar #" + (i + 1) + " - " + 
+                                  cars[i].getCompanyName() + " " + 
+                                  cars[i].getModelName() + " NEEDS SERVICE!");
+                System.out.print("Perform service now? (y/n): ");
+                String response = scanner.nextLine().toLowerCase();
+                
+                if (response.equals("y")) {
+                    cars[i].performService();
+                }
+            }
+        }
+        
+        if (!anyNeedsService) {
+            System.out.println("\n✓ All cars are up-to-date with service!");
+            
+            // Option to manually service a car
+            System.out.print("\nWould you like to service any car anyway? (y/n): ");
+            String response = scanner.nextLine().toLowerCase();
+            
+            if (response.equals("y")) {
+                System.out.print("Enter car number to service (1-" + cars.length + "): ");
+                int carIndex = getIntInRange(1, cars.length) - 1;
+                cars[carIndex].performService();
+            }
+        }
+    }
+    
+    // Method to check fuel efficiency
+    private static void checkFuelEfficiency(Car[] cars) {
+        if (cars.length == 0) {
+            System.out.println("\nNo cars available.");
+            return;
+        }
+        
+        
+        System.out.println("         FUEL EFFICIENCY REPORT");
+        
+        
+        for (Car car : cars) {
+            System.out.println("\n" + car.getCompanyName() + " " + car.getModelName() + ":");
+            System.out.println(car.getFuelEfficiency());
+        }
+    }
+    
+    // Method to estimate car values
+    private static void estimateCarValues(Car[] cars) {
+        if (cars.length == 0) {
+            System.out.println("\nNo cars available.");
+            return;
+        }
+        
+        
+        System.out.println("       CAR VALUE ESTIMATION");
+        
+        
+        for (Car car : cars) {
+            System.out.println("\n" + car.getCompanyName() + " " + car.getModelName() + 
+                             " (" + car.getYear() + ")");
+            
+            System.out.print("Enter original purchase price: ₱");
+            double originalPrice = getPositiveDouble();
+            
+            System.out.println(car.estimateCurrentValue(originalPrice));
+        }
+    }
+    
+    // Utility methods for input validation
+    private static int getPositiveInt() {
+        while (true) {
+            try {
+                int value = Integer.parseInt(scanner.nextLine());
+                if (value > 0) return value;
+                System.out.print("Please enter a positive number: ");
+            } catch (NumberFormatException e) {
+                System.out.print("Invalid input. Please enter a number: ");
+            }
+        }
+    }
+    
+    private static double getPositiveDouble() {
+        while (true) {
+            try {
+                double value = Double.parseDouble(scanner.nextLine());
+                if (value > 0) return value;
+                System.out.print("Please enter a positive number: ");
+            } catch (NumberFormatException e) {
+                System.out.print("Invalid input. Please enter a number: ");
+            }
+        }
+    }
+    
+    private static int getIntInRange(int min, int max) {
+        while (true) {
+            try {
+                int value = Integer.parseInt(scanner.nextLine());
+                if (value >= min && value <= max) return value;
+                System.out.print("Please enter a number between " + min + " and " + max + ": ");
+            } catch (NumberFormatException e) {
+                System.out.print("Invalid input. Please enter a number: ");
+            }
+        }
+    }
+}
